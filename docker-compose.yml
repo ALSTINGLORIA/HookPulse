@@ -1,10 +1,13 @@
 services:
+
   api:
     build:
       context: .
       dockerfile: Dockerfile
 
     container_name: webhook_api
+
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
 
     ports:
       - "8000:8000"
@@ -17,6 +20,26 @@ services:
         condition: service_healthy
 
     restart: unless-stopped
+
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: webhook_worker
+
+    command: celery -A app.core.celery_app:celery_app worker --loglevel=info
+
+    env_file:
+      - .env
+
+    depends_on:
+      redis:
+        condition: service_healthy
+
+    restart: unless-stopped
+
 
   redis:
     image: redis:7-alpine
@@ -38,6 +61,7 @@ services:
       retries: 5
 
     restart: unless-stopped
+
 
 volumes:
   redis_data:

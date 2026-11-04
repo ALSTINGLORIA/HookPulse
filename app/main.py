@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.api.events import router as events_router
+from app.api.event import router as events_router
 
 app = FastAPI(
     title="HookPulse",

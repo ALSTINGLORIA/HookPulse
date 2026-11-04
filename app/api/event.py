@@ -4,6 +4,7 @@ from redis.asyncio import Redis
 from app.schemas.event import EventCreate, EventResponse
 from app.core.redis import get_redis
 from app.services.event_service import create_event
+from app.tasks.delivery import deliver_event
 
 
 router = APIRouter(
@@ -21,13 +22,16 @@ async def submit_event(
     event_data: EventCreate,
     redis_client: Redis = Depends(get_redis)
 ):
+
     event_id = await create_event(
         event_data.model_dump(),
         redis_client
     )
 
+    deliver_event.delay(event_id)
+
     return EventResponse(
         event_id=event_id,
         status="pending",
-        message="Event successfully received."
+        message="Event successfully queued for delivery."
     )
